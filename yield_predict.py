@@ -61,7 +61,7 @@ for col in categorical_features:
     le = LabelEncoder()
     df_encoded[col + '_encoded'] = le.fit_transform(df_encoded[col])
     label_encoders[col] = le
-    print(f"  {col}: {dict(zip(le.classes_, le.transform(le.classes_)))}")
+    print(f"  {col}: {dict(zip(le.classes_, le.transform(le.classes_)))}")  # type: ignore[arg-type]
 
 # Final feature list
 feature_cols = numeric_features + [col + '_encoded' for col in categorical_features]
@@ -84,8 +84,8 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-print(f"\nTrain set: {X_train.shape[0]} samples")
-print(f"Test set: {X_test.shape[0]} samples")
+print(f"\nTrain set: {len(X_train)} samples")
+print(f"Test set: {len(X_test)} samples")
 
 # =============================================================================
 # MODEL TRAINING
@@ -170,7 +170,8 @@ print("="*60)
 # Figure 1: Feature Importance
 fig1, ax1 = plt.subplots(figsize=(10, 8))
 top_features = feature_importance.head(15)
-colors = plt.cm.RdYlGn(top_features['importance'] / top_features['importance'].max())
+cmap = plt.colormaps["RdYlGn"]
+colors = cmap(top_features['importance'] / top_features['importance'].max())
 ax1.barh(range(len(top_features)), top_features['importance'], color=colors)
 ax1.set_yticks(range(len(top_features)))
 ax1.set_yticklabels(top_features['feature'])
@@ -186,8 +187,8 @@ print("  Saved: feature_importance.png")
 fig2, ax2 = plt.subplots(figsize=(8, 8))
 ax2.scatter(y_test, y_test_pred, alpha=0.6, edgecolors='k', linewidth=0.5)
 # Perfect prediction line
-min_val = min(y_test.min(), y_test_pred.min())
-max_val = max(y_test.max(), y_test_pred.max())
+min_val = min(np.min(y_test), np.min(y_test_pred))
+max_val = max(np.max(y_test), np.max(y_test_pred))
 ax2.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect Prediction')
 ax2.set_xlabel('Actual Yield (bags/ha)', fontsize=12)
 ax2.set_ylabel('Predicted Yield (bags/ha)', fontsize=12)
@@ -217,7 +218,7 @@ print("  Saved: residuals_distribution.png")
 print("\n" + "="*60)
 print("MODEL COMPLETE!")
 print("="*60)
-print(f"\nSummary:")
+print("\nSummary:")
 print(f"  - Test R² Score: {test_r2:.4f} ({test_r2*100:.1f}% variance explained)")
 print(f"  - Test MAE: {test_mae:.2f} bags/ha average error")
 print(f"  - Model can predict yield within ~{test_rmse:.1f} bags/ha RMSE")

@@ -5,7 +5,9 @@ Streamlit application for farmers to predict crop yield.
 """
 
 import streamlit as st
-from model_utils import get_recommendations, predict_yield
+import pandas as pd
+
+from model_utils import explain_prediction, get_recommendations, predict_yield
 
 # Page configuration
 st.set_page_config(
@@ -188,11 +190,10 @@ def main():
                 organic_fert = st.checkbox("Use Organic Fertilizer")
 
             inorganic_qty = 0
-            inorganic_type = "none"
             if inorganic_fert:
                 col_c, col_d = st.columns(2)
                 with col_c:
-                    inorganic_type = st.selectbox(
+                    st.selectbox(
                         "Inorganic Fertilizer Type",
                         options=["npk", "urea"],
                         help="Common fertilizer types",
@@ -310,6 +311,22 @@ def main():
                 </div>
                 """,
                     unsafe_allow_html=True,
+                )
+
+                # Show feature contributions
+                explanation = explain_prediction(input_data)
+                st.markdown("### 🔍 What's Driving This Prediction?")
+                contrib_df = pd.DataFrame(explanation["contributions"])
+                contrib_df["color"] = contrib_df["shap_value"].apply(
+                    lambda v: "green" if v > 0 else "red"
+                )
+                st.bar_chart(
+                    contrib_df.set_index("feature")["shap_value"],
+                    horizontal=True,
+                )
+                st.caption(
+                    f"Baseline yield: {explanation['base_value']:.2f} bags/ha. "
+                    "Green bars increase yield, red bars decrease it."
                 )
 
                 # Get recommendations
